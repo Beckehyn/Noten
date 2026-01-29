@@ -10,6 +10,26 @@ st.set_page_config(
 )
 
 # -----------------------------
+# CSS für dunklere Tabelle
+# -----------------------------
+st.markdown("""
+<style>
+    table {
+        background-color: #f0f2f6;
+    }
+    th {
+        background-color: #d9dde5;
+        font-weight: bold;
+        text-align: center;
+    }
+    td {
+        background-color: #f7f8fa;
+        text-align: center;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# -----------------------------
 # Konstanten
 # -----------------------------
 FÄCHER = ["Deutsch", "Mathe", "Latein", "Englisch", "Kunst"]
@@ -39,13 +59,11 @@ if "daten" not in st.session_state:
 # Funktionen
 # -----------------------------
 def berechne_zeugnisnote(zeile):
-    # Klassenarbeiten (KA1–KA3)
     ka_noten = [
         int(n) for n in [zeile["KA1"], zeile["KA2"], zeile["KA3"]]
         if n != "-"
     ]
 
-    # mündlich & Referate
     mündl = zeile["mündl."]
     ref = zeile["Referate"]
 
@@ -70,7 +88,7 @@ def berechne_zeugnisnote(zeile):
     return round(gesamt / gewicht_summe, 2)
 
 # -----------------------------
-# Seite 1: Noteneingabe
+# Seite 1: Eingabe
 # -----------------------------
 if st.session_state.seite == "eingabe":
     st.title("📘 Notenrechner – Unterstufe")
@@ -107,10 +125,13 @@ if st.session_state.seite == "ergebnis":
     st.title("📊 Aktuelle Zeugnisnoten")
 
     ergebnis = {}
+    gültige_noten = []
+
     for fach in FÄCHER:
-        ergebnis[fach] = berechne_zeugnisnote(
-            st.session_state.daten.loc[fach]
-        )
+        note = berechne_zeugnisnote(st.session_state.daten.loc[fach])
+        ergebnis[fach] = note
+        if note != "-":
+            gültige_noten.append(note)
 
     ergebnis_df = pd.DataFrame.from_dict(
         ergebnis,
@@ -120,4 +141,15 @@ if st.session_state.seite == "ergebnis":
 
     st.table(ergebnis_df)
 
+    # -----------------------------
+    # Gesamtdurchschnitt
+    # -----------------------------
+    st.markdown("---")
 
+    if gültige_noten:
+        gesamt_durchschnitt = round(
+            sum(gültige_noten) / len(gültige_noten), 2
+        )
+        st.subheader(f"📌 ⌀ Gesamtdurchschnitt: **{gesamt_durchschnitt}**")
+    else:
+        st.subheader("📌 ⌀ Gesamtdurchschnitt: **-**")
