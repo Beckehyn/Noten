@@ -2,10 +2,16 @@ import streamlit as st
 import pandas as pd
 
 # -----------------------------
-# Konfiguration
+# Seitenkonfiguration
 # -----------------------------
-st.set_page_config(page_title="Notenrechner Unterstufe", layout="wide")
+st.set_page_config(
+    page_title="Notenrechner Unterstufe",
+    layout="wide"
+)
 
+# -----------------------------
+# Konstanten
+# -----------------------------
 FÄCHER = ["Deutsch", "Mathe", "Latein", "Englisch", "Kunst"]
 LEISTUNGEN = ["KA1", "KA2", "KA3", "mündl.", "Referate"]
 AUSWAHL = ["-", 1, 2, 3, 4, 5, 6]
@@ -33,9 +39,13 @@ if "daten" not in st.session_state:
 # Funktionen
 # -----------------------------
 def berechne_zeugnisnote(zeile):
-    ka_noten = [zeile["KA1"], zeile["KA2"], zeile["KA3"]]
-    ka_noten = [n for n in ka_noten if n != "-"]
+    # Klassenarbeiten (KA1–KA3)
+    ka_noten = [
+        int(n) for n in [zeile["KA1"], zeile["KA2"], zeile["KA3"]]
+        if n != "-"
+    ]
 
+    # mündlich & Referate
     mündl = zeile["mündl."]
     ref = zeile["Referate"]
 
@@ -43,15 +53,15 @@ def berechne_zeugnisnote(zeile):
     gewicht_summe = 0
 
     if ka_noten:
-        gesamt += sum(ka_noten) / len(ka_noten) * GEWICHTE["KA"]
+        gesamt += (sum(ka_noten) / len(ka_noten)) * GEWICHTE["KA"]
         gewicht_summe += GEWICHTE["KA"]
 
     if mündl != "-":
-        gesamt += mündl * GEWICHTE["mündl."]
+        gesamt += int(mündl) * GEWICHTE["mündl."]
         gewicht_summe += GEWICHTE["mündl."]
 
     if ref != "-":
-        gesamt += ref * GEWICHTE["Referate"]
+        gesamt += int(ref) * GEWICHTE["Referate"]
         gewicht_summe += GEWICHTE["Referate"]
 
     if gewicht_summe == 0:
@@ -60,11 +70,10 @@ def berechne_zeugnisnote(zeile):
     return round(gesamt / gewicht_summe, 2)
 
 # -----------------------------
-# Seite 1: Eingabe
+# Seite 1: Noteneingabe
 # -----------------------------
 if st.session_state.seite == "eingabe":
     st.title("📘 Notenrechner – Unterstufe")
-
     st.write("Trage deine bisherigen Noten ein:")
 
     st.session_state.daten = st.data_editor(
@@ -85,7 +94,7 @@ if st.session_state.seite == "eingabe":
         st.rerun()
 
 # -----------------------------
-# Seite 2: Ergebnis
+# Seite 2: Ergebnisanzeige
 # -----------------------------
 if st.session_state.seite == "ergebnis":
     col1, col2 = st.columns([10, 1])
@@ -98,12 +107,17 @@ if st.session_state.seite == "ergebnis":
     st.title("📊 Aktuelle Zeugnisnoten")
 
     ergebnis = {}
-
     for fach in FÄCHER:
-        ergebnis[fach] = berechne_zeugnisnote(st.session_state.daten.loc[fach])
+        ergebnis[fach] = berechne_zeugnisnote(
+            st.session_state.daten.loc[fach]
+        )
 
     ergebnis_df = pd.DataFrame.from_dict(
-        ergebnis, orient="index", columns=["Zeugnisnote"]
+        ergebnis,
+        orient="index",
+        columns=["Zeugnisnote"]
     )
 
     st.table(ergebnis_df)
+
+
